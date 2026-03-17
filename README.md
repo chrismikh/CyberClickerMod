@@ -1,0 +1,1 @@
+A mod made for cyberpunk 2077 game, that adds a browser page to the game where you can play an idle clicker styled game. Made with browser extension framework. Nexus page: https://www.nexusmods.com/cyberpunk2077/mods/28240
