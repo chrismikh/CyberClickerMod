@@ -152,6 +152,7 @@ public class CyberClickerSiteListener extends BrowserEventsListener {
   private let m_btn1k: wref<inkText>;
   private let m_btn10k: wref<inkText>;
   private let m_btn100k: wref<inkText>;
+  private let m_btnMax: wref<inkText>;
   private let m_resetBtn: wref<inkText>;
   private let m_confirmBtn: wref<inkText>;
 
@@ -517,6 +518,12 @@ public class CyberClickerSiteListener extends BrowserEventsListener {
       this.m_btn100k.SetTintColor(on ? this.m_colCyan : this.m_colDarkGray);
       this.m_btn100k.SetInteractive(on);
     }
+    if IsDefined(this.m_btnMax) {
+      let on: Bool = this.GetMaxRedeemablePoints() > 0;
+      this.m_btnMax.SetText("[ " + CyberClickerLoc.RedeemMax() + " ]");
+      this.m_btnMax.SetTintColor(on ? this.m_colCyan : this.m_colDarkGray);
+      this.m_btnMax.SetInteractive(on);
+    }
     if IsDefined(this.m_resetBtn) {
       this.m_resetBtn.SetTintColor(hasStaged ? this.m_colCyan : this.m_colDarkGray);
       this.m_resetBtn.SetInteractive(hasStaged);
@@ -618,6 +625,7 @@ public class CyberClickerSiteListener extends BrowserEventsListener {
     this.m_btn1k = null;
     this.m_btn10k = null;
     this.m_btn100k = null;
+    this.m_btnMax = null;
     this.m_resetBtn = null;
     this.m_confirmBtn = null;
 
@@ -783,6 +791,8 @@ public class CyberClickerSiteListener extends BrowserEventsListener {
     this.m_btn10k = btn10k;
     let btn100k = new inkText(); btn100k.SetText("[ +" + IntToString(rate * 100) + " ]"); this.StyleButton(btn100k, false); btn100k.AttachController(new CyberClickerMenuButtonController()); btn100k.RegisterToCallback(n"OnRelease", this, n"OnAddRedeem100k"); btn100k.Reparent(incRow);
     this.m_btn100k = btn100k;
+    let btnMax = new inkText(); btnMax.SetText("[ " + CyberClickerLoc.RedeemMax() + " ]"); this.StyleButton(btnMax, false); btnMax.AttachController(new CyberClickerMenuButtonController()); btnMax.RegisterToCallback(n"OnRelease", this, n"OnAddRedeemMax"); btnMax.Reparent(incRow);
+    this.m_btnMax = btnMax;
 
     let actRow = new inkHorizontalPanel();
     actRow.SetHAlign(inkEHorizontalAlign.Center);
@@ -940,12 +950,21 @@ public class CyberClickerSiteListener extends BrowserEventsListener {
   protected cb func OnBuyCap(evt: ref<inkPointerEvent>) -> Bool { if evt.IsAction(n"click") { evt.Consume(); let lvl = this.GetFactOrDefault(CyberClickerFacts.Capacity(), 0); if this.TrySpendPoints(this.CostCapacity(lvl), CyberClickerLoc.UpgNameCap()) { this.SetFact(CyberClickerFacts.Capacity(), lvl + 1); this.PlayClickSfx(n"ui_menu_perk_buy_master"); } this.m_deviceLogicController.LoadPageByAddress(this.m_currentAddr); } return false; }
 
   // Redeem Handlers
-  private func AddStagedRedeem(amount: Int32) -> Void {
+  private func GetMaxRedeemablePoints() -> Int32 {
     let rate: Int32 = this.GetRedeemRate();
+    if rate <= 0 { return 0; }
     let pts: Int32 = this.GetFactOrDefault(CyberClickerFacts.Points(), 0);
-    let space: Int32 = pts - this.m_stagedRedeemPoints;
-    if space < rate { return; }
-    let safeAmount: Int32 = amount; if safeAmount > space { safeAmount = (space / rate) * rate; }
+    let available: Int32 = pts - this.m_stagedRedeemPoints;
+    if available < rate { return 0; }
+    return (available / rate) * rate;
+  }
+
+  private func AddStagedRedeem(amount: Int32) -> Void {
+    let maxAdd: Int32 = this.GetMaxRedeemablePoints();
+    if maxAdd <= 0 { return; }
+    let safeAmount: Int32 = amount;
+    if safeAmount > maxAdd { safeAmount = maxAdd; }
+    if safeAmount <= 0 { return; }
     this.m_stagedRedeemPoints += safeAmount;
     this.PlayClickSfx(n"ui_menu_value_up");
     this.m_deviceLogicController.LoadPageByAddress(this.m_currentAddr);
@@ -953,6 +972,7 @@ public class CyberClickerSiteListener extends BrowserEventsListener {
   protected cb func OnAddRedeem1k(evt: ref<inkPointerEvent>) -> Bool { if evt.IsAction(n"click") { evt.Consume(); this.AddStagedRedeem(this.GetRedeemRate()); } return false; }
   protected cb func OnAddRedeem10k(evt: ref<inkPointerEvent>) -> Bool { if evt.IsAction(n"click") { evt.Consume(); this.AddStagedRedeem(this.GetRedeemRate() * 10); } return false; }
   protected cb func OnAddRedeem100k(evt: ref<inkPointerEvent>) -> Bool { if evt.IsAction(n"click") { evt.Consume(); this.AddStagedRedeem(this.GetRedeemRate() * 100); } return false; }
+  protected cb func OnAddRedeemMax(evt: ref<inkPointerEvent>) -> Bool { if evt.IsAction(n"click") { evt.Consume(); this.AddStagedRedeem(this.GetMaxRedeemablePoints()); } return false; }
   protected cb func OnResetRedeem(evt: ref<inkPointerEvent>) -> Bool { if evt.IsAction(n"click") { evt.Consume(); this.PlayClickSfx(n"ui_menu_value_down"); this.m_stagedRedeemPoints = 0; this.m_lastMsg = s""; this.m_deviceLogicController.LoadPageByAddress(this.m_currentAddr); } return false; }
   protected cb func OnConfirmRedeem(evt: ref<inkPointerEvent>) -> Bool {
     if evt.IsAction(n"click") {

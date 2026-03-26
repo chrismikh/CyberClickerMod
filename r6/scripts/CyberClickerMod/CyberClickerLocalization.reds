@@ -39,6 +39,7 @@ public abstract class CyberClickerLoc {
   public static func BtnAdd1K() -> String { return "[ +1K ]"; }
   public static func BtnAdd10K() -> String { return "[ +10K ]"; }
   public static func BtnAdd100K() -> String { return "[ +100K ]"; }
+  public static func RedeemMax() -> String { return "MAX"; }
 
   // Redeem Page
   public static func RedeemExchangeRate(rate: Int32) -> String { return "EXCHANGE RATE: " + IntToString(rate) + " DATA = 1 €$"; }
